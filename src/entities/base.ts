@@ -6,7 +6,6 @@ interface ListEntitiesResponseBase {
 	readonly key: number
 	readonly name: string
 	readonly objectId: string
-	readonly uniqueId: string
 }
 
 interface StateResponseBaseType {
