@@ -4,7 +4,7 @@ import { ListEntitiesFanResponse, FanCommandRequest, FanStateResponse } from '..
 
 export default class Fan extends StatefulEntity<ListEntitiesFanResponse, FanStateResponse> {
 	static subscribe(socket: EsphomeSocket, newEntityCallback: (entity: Fan) => void) {
-		socket.addMessageListener(ListEntitiesFanResponse, (config) => {
+		socket.addMessageListener(ListEntitiesFanResponse, (config: ListEntitiesFanResponse) => {
 			const instance = new Fan(socket, config)
 			newEntityCallback(instance)
 		})

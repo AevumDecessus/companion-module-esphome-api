@@ -4,7 +4,7 @@ import { ListEntitiesCoverResponse, CoverCommandRequest, CoverStateResponse } fr
 
 export default class Cover extends StatefulEntity<ListEntitiesCoverResponse, CoverStateResponse> {
 	static subscribe(socket: EsphomeSocket, newEntityCallback: (entity: Cover) => void) {
-		socket.addMessageListener(ListEntitiesCoverResponse, (config) => {
+		socket.addMessageListener(ListEntitiesCoverResponse, (config: ListEntitiesCoverResponse) => {
 			const instance = new Cover(socket, config)
 			newEntityCallback(instance)
 		})

@@ -4,7 +4,7 @@ import { ListEntitiesSwitchResponse, SwitchCommandRequest, SwitchStateResponse }
 
 export default class Switch extends StatefulEntity<ListEntitiesSwitchResponse, SwitchStateResponse> {
 	static subscribe(socket: EsphomeSocket, newEntityCallback: (entity: Switch) => void) {
-		socket.addMessageListener(ListEntitiesSwitchResponse, (config) => {
+		socket.addMessageListener(ListEntitiesSwitchResponse, (config: ListEntitiesSwitchResponse) => {
 			const instance = new Switch(socket, config)
 			newEntityCallback(instance)
 		})

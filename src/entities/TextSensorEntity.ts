@@ -4,7 +4,7 @@ import { ListEntitiesTextSensorResponse, TextSensorStateResponse } from '../prot
 
 export default class TextSensor extends StatefulEntity<ListEntitiesTextSensorResponse, TextSensorStateResponse> {
 	static subscribe(socket: EsphomeSocket, newEntityCallback: (entity: TextSensor) => void) {
-		socket.addMessageListener(ListEntitiesTextSensorResponse, (config) => {
+		socket.addMessageListener(ListEntitiesTextSensorResponse, (config: ListEntitiesTextSensorResponse) => {
 			const instance = new TextSensor(socket, config)
 			newEntityCallback(instance)
 		})

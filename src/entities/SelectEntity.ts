@@ -4,7 +4,7 @@ import { ListEntitiesSelectResponse, SelectCommandRequest, SelectStateResponse }
 
 export default class Select extends StatefulEntity<ListEntitiesSelectResponse, SelectStateResponse> {
 	static subscribe(socket: EsphomeSocket, newEntityCallback: (entity: Select) => void) {
-		socket.addMessageListener(ListEntitiesSelectResponse, (config) => {
+		socket.addMessageListener(ListEntitiesSelectResponse, (config: ListEntitiesSelectResponse) => {
 			const instance = new Select(socket, config)
 			newEntityCallback(instance)
 		})

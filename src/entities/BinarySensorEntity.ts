@@ -4,7 +4,7 @@ import { ListEntitiesBinarySensorResponse, BinarySensorStateResponse } from '../
 
 export default class BinarySensor extends StatefulEntity<ListEntitiesBinarySensorResponse, BinarySensorStateResponse> {
 	static subscribe(socket: EsphomeSocket, newEntityCallback: (entity: BinarySensor) => void) {
-		socket.addMessageListener(ListEntitiesBinarySensorResponse, (config) => {
+		socket.addMessageListener(ListEntitiesBinarySensorResponse, (config: ListEntitiesBinarySensorResponse) => {
 			const instance = new BinarySensor(socket, config)
 			newEntityCallback(instance)
 		})

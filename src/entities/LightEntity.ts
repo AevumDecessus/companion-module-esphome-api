@@ -4,7 +4,7 @@ import { ListEntitiesLightResponse, LightCommandRequest, LightStateResponse, Col
 
 export default class Light extends StatefulEntity<ListEntitiesLightResponse, LightStateResponse> {
 	static subscribe(socket: EsphomeSocket, newEntityCallback: (entity: Light) => void) {
-		socket.addMessageListener(ListEntitiesLightResponse, (config) => {
+		socket.addMessageListener(ListEntitiesLightResponse, (config: ListEntitiesLightResponse) => {
 			const instance = new Light(socket, config)
 			newEntityCallback(instance)
 		})

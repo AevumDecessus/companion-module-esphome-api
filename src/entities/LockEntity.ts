@@ -4,7 +4,7 @@ import { ListEntitiesLockResponse, LockCommand, LockCommandRequest, LockState, L
 
 export default class Lock extends StatefulEntity<ListEntitiesLockResponse, LockStateResponse> {
 	static subscribe(socket: EsphomeSocket, newEntityCallback: (entity: Lock) => void) {
-		socket.addMessageListener(ListEntitiesLockResponse, (config) => {
+		socket.addMessageListener(ListEntitiesLockResponse, (config: ListEntitiesLockResponse) => {
 			const instance = new Lock(socket, config)
 			newEntityCallback(instance)
 		})

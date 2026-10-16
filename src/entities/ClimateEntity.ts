@@ -4,7 +4,7 @@ import { ListEntitiesClimateResponse, ClimateCommandRequest, ClimateStateRespons
 
 export default class Climate extends StatefulEntity<ListEntitiesClimateResponse, ClimateStateResponse> {
 	static subscribe(socket: EsphomeSocket, newEntityCallback: (entity: Climate) => void) {
-		socket.addMessageListener(ListEntitiesClimateResponse, (config) => {
+		socket.addMessageListener(ListEntitiesClimateResponse, (config: ListEntitiesClimateResponse) => {
 			const instance = new Climate(socket, config)
 			newEntityCallback(instance)
 		})

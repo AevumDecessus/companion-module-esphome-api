@@ -4,7 +4,7 @@ import { ListEntitiesNumberResponse, NumberCommandRequest, NumberStateResponse }
 
 export default class NumberEntity extends StatefulEntity<ListEntitiesNumberResponse, NumberStateResponse> {
 	static subscribe(socket: EsphomeSocket, newEntityCallback: (entity: NumberEntity) => void) {
-		socket.addMessageListener(ListEntitiesNumberResponse, (config) => {
+		socket.addMessageListener(ListEntitiesNumberResponse, (config: ListEntitiesNumberResponse) => {
 			const instance = new NumberEntity(socket, config)
 			newEntityCallback(instance)
 		})

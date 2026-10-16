@@ -4,7 +4,7 @@ import { ButtonCommandRequest, ListEntitiesButtonResponse } from '../proto/api'
 
 export default class Button extends BaseEntity<ListEntitiesButtonResponse> {
 	static subscribe(socket: EsphomeSocket, newEntityCallback: (entity: Button) => void) {
-		socket.addMessageListener(ListEntitiesButtonResponse, (config) => {
+		socket.addMessageListener(ListEntitiesButtonResponse, (config: ListEntitiesButtonResponse) => {
 			const instance = new Button(socket, config)
 			newEntityCallback(instance)
 		})
