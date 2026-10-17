@@ -1049,6 +1049,7 @@ __metadata:
     "@types/node": "npm:^22.20.5"
     corepack: "npm:^0.36.0"
     eslint: "npm:^10.12.0"
+    esphome-client: "npm:^2"
     husky: "npm:^9.1.7"
     lint-staged: "npm:^17.6.0"
     prettier: "npm:^3.9.9"
@@ -1057,6 +1058,15 @@ __metadata:
     typescript-eslint: "npm:^8.71.0"
   languageName: unknown
   linkType: soft
+
+"esphome-client@npm:^2":
+  version: 2.0.0
+  resolution: "esphome-client@npm:2.0.0"
+  bin:
+    espc: dist/util/espc-bin.js
+  checksum: 10c0/e935c245b7d9031d8f2916894790c9fbf056215131916c8b9b4fcdcf48751f37ff1ff70afd561dd5b81ec87d345381a13043e0cf79fa3d38d9a196013f396eaa
+  languageName: node
+  linkType: hard
 
 "espree@npm:^11.2.0":
   version: 11.2.0
