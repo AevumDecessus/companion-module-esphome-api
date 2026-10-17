@@ -1,6 +1,10 @@
-## ESPHome
+# ESPHome
 
-**Available commands**
+## Minimum ESPHome Version
+
+`2026.1` is the minimum required ESPHome version, as that version fully deprecated plaintext password auth in favor of Noise Encryption. Due to this, password auth is no longer enabled in any way, and an encryption key is required for all communications.
+
+## Available commands
 
 - Push Button
 - Set Climate mode
@@ -13,7 +17,7 @@
 - Set Select state
 - Set Switch state
 
-**Available feedbacks**
+## Available feedbacks
 
 - Binary Sensor state
 - Climate Mode
