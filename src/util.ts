@@ -4,6 +4,8 @@ export enum ActionId {
 	LightState = 'light_state',
 	LightBrightness = 'light_brightness',
 	SwitchState = 'switch_state',
+	LightColorRGB = 'light_color_rgb',
+	LightColorTemp = 'light_color_temp',
 }
 
 export enum PrefixedActionIds {

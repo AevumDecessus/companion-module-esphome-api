@@ -1,47 +1,39 @@
-import { CompanionActionDefinitions, CompanionFeedbackDefinitions, combineRgb, Regex } from '@companion-module/base'
-import { EsphomeClient } from '../esphomeClient'
-import { EntityAdapter } from './base'
-import { FeedbackId } from '../util'
-import TextSensor from '../entities/TextSensorEntity'
-import { EntityPicker } from '../choices'
+import { CompanionActionDefinitions, CompanionFeedbackDefinitions } from '@companion-module/base'
+import { TextSensorEntity } from 'esphome-client'
+import { EsphomeWrapper } from '../esphomeWrapper.js'
+import { EntityAdapter } from './base.js'
+import { FeedbackId } from '../util.js'
 
-export const TextSensorAdapter: EntityAdapter<TextSensor> = {
-	is: (instance: unknown): instance is TextSensor => {
-		return instance instanceof TextSensor
+export const TextSensorAdapter: EntityAdapter<TextSensorEntity> = {
+	is: (instance: unknown): instance is TextSensorEntity => {
+		return typeof instance === 'object' && instance !== null && (instance as any).type === 'text_sensor'
 	},
 
-	createActions: (_client: EsphomeClient): CompanionActionDefinitions => {
+	createActions: (_client: EsphomeWrapper): CompanionActionDefinitions => {
 		return {}
 	},
 
-	createFeedbacks: (client: EsphomeClient): CompanionFeedbackDefinitions => {
+	createFeedbacks: (client: EsphomeWrapper): CompanionFeedbackDefinitions => {
 		const feedbacks: CompanionFeedbackDefinitions = {}
-		const entities = client.getAll(TextSensorAdapter)
-		if (entities.length) {
+		const textSensors = client.getAvailableEntityIds()['text_sensor'] || []
+		if (textSensors.length) {
 			feedbacks[FeedbackId.TextSensorValue] = {
-				type: 'boolean',
-				name: 'Change from text sensor state',
-				description: 'If the text sensor state matches the rule, change style of the bank',
+				type: 'value',
+				name: 'Change from text sensor value',
+				description: 'If the text sensor value matches the rule, change style of the bank',
 				options: [
-					EntityPicker(entities),
 					{
-						type: 'textinput',
-						id: 'state',
-						label: 'State Value',
-						required: true,
-						regex: Regex.SOMETHING,
+						type: 'dropdown',
+						label: 'Entity',
+						id: 'entity_id',
+						default: textSensors[0],
+						choices: textSensors.map((e) => ({ id: e, label: e })),
 					},
 				],
-				defaultStyle: {
-					color: combineRgb(0, 0, 0),
-					bgcolor: combineRgb(0, 255, 0),
-				},
 				callback: (feedback): boolean => {
-					const entity = client.getEntity(String(feedback.options.entity_id), TextSensorAdapter)
-					if (entity) {
-						return entity.state == feedback.options.state
-					}
-					return false
+					const event = client.latest(feedback.options.entity_id as string)
+					if (!event || !event.data) return false
+					return event.data.state === feedback.options.value
 				},
 			}
 		}

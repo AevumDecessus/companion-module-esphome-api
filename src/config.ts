@@ -1,7 +1,7 @@
-import { Regex, SomeCompanionConfigField } from '@companion-module/base'
-import { DEFAULT_PORT } from './connection/esphomeSocket'
+import { Regex, type SomeCompanionConfigField } from '@companion-module/base'
+const DEFAULT_PORT = 6053
 
-export interface DeviceConfig {
+export type ModuleConfig = {
 	host: string
 	port?: number
 	password?: string
@@ -12,9 +12,9 @@ export function GetConfigFields(): SomeCompanionConfigField[] {
 		{
 			type: 'textinput',
 			id: 'host',
-			label: 'Host',
+			label: 'Target IP',
 			width: 8,
-			regex: Regex.SOMETHING,
+			regex: Regex.IP,
 		},
 		{
 			type: 'number',
@@ -27,9 +27,9 @@ export function GetConfigFields(): SomeCompanionConfigField[] {
 		},
 		{
 			type: 'textinput',
-			id: 'password',
-			label: 'Password',
-			width: 12,
+			id: 'psk',
+			label: 'Encryption Key',
+			width: 44,
 		},
 	]
 }

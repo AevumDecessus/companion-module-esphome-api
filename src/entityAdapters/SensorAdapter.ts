@@ -1,38 +1,42 @@
-import { CompanionActionDefinitions, CompanionFeedbackDefinitions, combineRgb } from '@companion-module/base'
-import { EsphomeClient } from '../esphomeClient'
-import { EntityAdapter } from './base'
-import { FeedbackId } from '../util'
-import Sensor from '../entities/SensorEntity'
-import { compareNumber, EntityPicker, NumberComparitorPicker, NumberValuePicker } from '../choices'
+import { CompanionActionDefinitions, CompanionFeedbackDefinitions } from '@companion-module/base'
+import { SensorEntity } from 'esphome-client'
+import { EsphomeWrapper } from '../esphomeWrapper.js'
+import { EntityAdapter } from './base.js'
+import { FeedbackId } from '../util.js'
+import { NumberComparitorPicker, NumberValuePicker } from '../choices.js'
 
-export const SensorAdapter: EntityAdapter<Sensor> = {
-	is: (instance: unknown): instance is Sensor => {
-		return instance instanceof Sensor
+export const SensorAdapter: EntityAdapter<SensorEntity> = {
+	is: (instance: unknown): instance is SensorEntity => {
+		return typeof instance === 'object' && instance !== null && (instance as any).type === 'sensor'
 	},
 
-	createActions: (_client: EsphomeClient): CompanionActionDefinitions => {
+	createActions: (_client: EsphomeWrapper): CompanionActionDefinitions => {
 		return {}
 	},
 
-	createFeedbacks: (client: EsphomeClient): CompanionFeedbackDefinitions => {
+	createFeedbacks: (client: EsphomeWrapper): CompanionFeedbackDefinitions => {
 		const feedbacks: CompanionFeedbackDefinitions = {}
-		const entities = client.getAll(SensorAdapter)
-		if (entities.length) {
+		const sensors = client.getAvailableEntityIds()['sensor'] || []
+		if (sensors.length) {
 			feedbacks[FeedbackId.SensorState] = {
-				type: 'boolean',
+				type: 'value',
 				name: 'Change from sensor state',
 				description: 'If the sensor state matches the rule, change style of the bank',
-				options: [EntityPicker(entities), NumberComparitorPicker(), NumberValuePicker()],
-				defaultStyle: {
-					color: combineRgb(0, 0, 0),
-					bgcolor: combineRgb(0, 255, 0),
-				},
-				callback: (feedback): boolean => {
-					const entity = client.getEntity(String(feedback.options.entity_id), SensorAdapter)
-					if (entity) {
-						return compareNumber(feedback.options.value, feedback.options.comparitor, entity.state)
-					}
-					return false
+				options: [
+					{
+						type: 'dropdown',
+						label: 'Entity',
+						id: 'entity_id',
+						default: sensors[0],
+						choices: sensors.map((e) => ({ id: e, label: e })),
+					},
+					NumberComparitorPicker(),
+					NumberValuePicker(),
+				],
+				callback: (feedback): number | null => {
+					const event = client.latest((feedback as any).options.entity_id)
+					if (!event || !event.data) return null
+					return event.data.state === (feedback as any).options.value ? 1 : 0
 				},
 			}
 		}

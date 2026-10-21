@@ -1,8 +1,12 @@
-import { CompanionActionDefinitions } from '@companion-module/base'
-import { EntityAdapters } from './entityAdapters'
-import { EsphomeClient } from './esphomeClient'
+import type ModuleInstance from './main.js'
 
-export function GetActionsList(client: EsphomeClient): CompanionActionDefinitions {
+import { CompanionActionDefinitions } from '@companion-module/base'
+import { EntityAdapters } from './entityAdapters/index.js'
+import { EsphomeWrapper } from './esphomeWrapper.js'
+
+export type ActionsSchema = Record<string, any>
+
+export function GetActionsList(client: EsphomeWrapper): CompanionActionDefinitions {
 	const actions: CompanionActionDefinitions = {}
 
 	Object.values(EntityAdapters).forEach((adapter) => {
@@ -11,3 +15,5 @@ export function GetActionsList(client: EsphomeClient): CompanionActionDefinition
 
 	return actions
 }
+
+export function UpdateActions(_: ModuleInstance): void {}

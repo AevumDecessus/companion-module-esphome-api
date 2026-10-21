@@ -1,69 +1,77 @@
 import { CompanionActionDefinitions, CompanionFeedbackDefinitions, combineRgb } from '@companion-module/base'
-import { EsphomeClient } from '../esphomeClient'
-import { EntityAdapter } from './base'
-import { PrefixedActionIds, FeedbackId } from '../util'
-import Cover from '../entities/CoverEntity'
-import { EntityPicker } from '../choices'
+import { CoverEntity } from 'esphome-client'
+import { EsphomeWrapper } from '../esphomeWrapper.js'
+import { EntityAdapter } from './base.js'
+import { PrefixedActionIds, FeedbackId } from '../util.js'
 
-export const CoverAdapter: EntityAdapter<Cover> = {
-	is: (instance: unknown): instance is Cover => {
-		return instance instanceof Cover
+export const CoverAdapter: EntityAdapter<CoverEntity> = {
+	is: (instance: unknown): instance is CoverEntity => {
+		return typeof instance === 'object' && instance !== null && (instance as any).type === 'cover'
 	},
 
-	createActions: (client: EsphomeClient): CompanionActionDefinitions => {
+	createActions: (client: EsphomeWrapper): CompanionActionDefinitions => {
 		const actions: CompanionActionDefinitions = {}
-		client.getAll(CoverAdapter).forEach((cover) => {
-			actions[PrefixedActionIds.CoverPosition + cover.id] = {
-				name: `${cover.name}: Set cover position`,
-				options: [
-					{
-						type: 'number',
-						label: 'Position (0=Closed, 1=Open)',
-						id: 'value',
-						default: 0,
-						min: 0,
-						max: 1,
-						step: cover.supportsPosition ? 0.01 : 1,
-						range: true,
+		const coverEntities = client.getAvailableEntityIds()['cover'] || []
+		if (coverEntities.length) {
+			coverEntities.forEach((entityId: string) => {
+				actions[PrefixedActionIds.CoverPosition + entityId] = {
+					name: `${entityId}: Set cover position`,
+					options: [
+						{
+							type: 'number',
+							label: 'Position (0=Closed, 1=Open)',
+							id: 'value',
+							default: 0,
+							min: 0,
+							max: 1,
+							step: 0.01,
+							range: true,
+						},
+					],
+					callback: (evt): void => {
+						client.command(evt.options.entity_id as string, { position: Number(evt.options.value) })
 					},
-				],
-				callback: (evt): void => {
-					cover.setPosition(Number(evt.options.value))
-				},
-			}
-		})
+				}
+			})
+		}
 		return actions
 	},
 
-	createFeedbacks: (client: EsphomeClient): CompanionFeedbackDefinitions => {
+	createFeedbacks: (client: EsphomeWrapper): CompanionFeedbackDefinitions => {
 		const feedbacks: CompanionFeedbackDefinitions = {}
-		const entities = client.getAll(CoverAdapter)
-		if (entities.length) {
-			feedbacks[FeedbackId.CoverOpen] = {
-				type: 'boolean',
-				name: 'Change from cover open',
-				description: 'If the cover open matches the rule, change style of the bank',
-				options: [
-					EntityPicker(entities),
-					{
-						type: 'checkbox',
-						label: 'Open',
-						id: 'open',
-						default: true,
+		const covers = client.getAvailableEntityIds()['cover'] || []
+		if (covers.length) {
+			covers.forEach((entityId: string) => {
+				feedbacks[FeedbackId.CoverOpen + entityId] = {
+					type: 'boolean',
+					name: `${entityId}: Change from cover open`,
+					description: 'If the cover open matches the rule, change style of the bank',
+					options: [
+						{
+							type: 'dropdown',
+							label: 'Entity',
+							id: 'entity_id',
+							default: entityId,
+							choices: [{ id: entityId, label: entityId }],
+						},
+						{
+							type: 'checkbox',
+							label: 'Open',
+							id: 'open',
+							default: true,
+						},
+					],
+					defaultStyle: {
+						color: combineRgb(0, 0, 0),
+						bgcolor: combineRgb(0, 255, 0),
 					},
-				],
-				defaultStyle: {
-					color: combineRgb(0, 0, 0),
-					bgcolor: combineRgb(0, 255, 0),
-				},
-				callback: (feedback): boolean => {
-					const entity = client.getEntity(String(feedback.options.entity_id), CoverAdapter)
-					if (entity) {
-						return entity.isOpen === !!feedback.options.open
-					}
-					return false
-				},
-			}
+					callback: (feedback): boolean => {
+						const event = client.latest(feedback.options.entity_id as string)
+						if (!event || !event.data) return false
+						return !event.data.isOpen === !feedback.options.open
+					},
+				}
+			})
 		}
 		return feedbacks
 	},

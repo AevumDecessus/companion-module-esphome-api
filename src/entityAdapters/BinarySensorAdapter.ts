@@ -1,40 +1,44 @@
-import { CompanionActionDefinitions, CompanionFeedbackDefinitions, combineRgb } from '@companion-module/base'
-import { EsphomeClient } from '../esphomeClient'
-import { EntityAdapter } from './base'
-import { FeedbackId } from '../util'
-import BinarySensor from '../entities/BinarySensorEntity'
-import { EntityPicker, OnOffPicker } from '../choices'
+import { CompanionActionDefinitions, CompanionFeedbackDefinitions } from '@companion-module/base'
+import { BinarySensorEntity } from 'esphome-client'
+import { EsphomeWrapper } from '../esphomeWrapper.js'
+import { EntityAdapter } from './base.js'
+import { FeedbackId } from '../util.js'
 
-export const BinarySensorAdapter: EntityAdapter<BinarySensor> = {
-	is: (instance: unknown): instance is BinarySensor => {
-		return instance instanceof BinarySensor
+export const BinarySensorAdapter: EntityAdapter<BinarySensorEntity> = {
+	is: (instance: unknown): instance is BinarySensorEntity => {
+		return typeof instance === 'object' && instance !== null && (instance as any).type === 'binary_sensor'
 	},
 
-	createActions: (_client: EsphomeClient): CompanionActionDefinitions => {
+	createActions: (_client: EsphomeWrapper): CompanionActionDefinitions => {
 		return {}
 	},
 
-	createFeedbacks: (client: EsphomeClient): CompanionFeedbackDefinitions => {
+	createFeedbacks: (client: EsphomeWrapper): CompanionFeedbackDefinitions => {
 		const feedbacks: CompanionFeedbackDefinitions = {}
-		const entities = client.getAll(BinarySensorAdapter)
-		if (entities.length) {
-			feedbacks[FeedbackId.BinarySensorState] = {
-				type: 'boolean',
-				name: 'Change from binary sensor state',
-				description: 'If the binary sensor state matches the rule, change style of the bank',
-				options: [EntityPicker(entities), OnOffPicker()],
-				defaultStyle: {
-					color: combineRgb(0, 0, 0),
-					bgcolor: combineRgb(0, 255, 0),
-				},
-				callback: (feedback): boolean => {
-					const entity = client.getEntity(String(feedback.options.entity_id), BinarySensorAdapter)
-					if (entity) {
-						return entity.isOn === !!feedback.options.state
-					}
-					return false
-				},
-			}
+		const binarySensors = client.getAvailableEntityIds()['binary_sensor'] || []
+		if (binarySensors.length) {
+			binarySensors.forEach((entityId: string) => {
+				feedbacks[FeedbackId.BinarySensorState + entityId] = {
+					type: 'boolean',
+					name: `${entityId}: Change from binary sensor state`,
+					description: 'If the binary sensor state matches the rule, change style of the bank',
+					options: [
+						{
+							type: 'dropdown',
+							label: 'Entity',
+							id: 'entity_id',
+							default: entityId,
+							choices: [{ id: entityId, label: entityId }],
+						},
+					],
+					defaultStyle: { color: 0, bgcolor: 16777215 },
+					callback: (feedback): boolean => {
+						const event = client.latest(feedback.options.entity_id as string)
+						if (!event || !event.data) return false
+						return event.data.isOn === feedback.options.state
+					},
+				}
+			})
 		}
 		return feedbacks
 	},

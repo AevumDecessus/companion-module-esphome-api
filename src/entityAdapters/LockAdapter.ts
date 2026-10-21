@@ -1,82 +1,89 @@
 import { CompanionActionDefinitions, CompanionFeedbackDefinitions, combineRgb } from '@companion-module/base'
-import { EsphomeClient } from '../esphomeClient'
-import { EntityAdapter } from './base'
-import { PrefixedActionIds, FeedbackId } from '../util'
-import Lock from '../entities/LockEntity'
-import { EntityPicker } from '../choices'
-import { LockCommand, LockState } from '../proto/api'
+import { LockEntity } from 'esphome-client'
+import { EsphomeWrapper } from '../esphomeWrapper.js'
+import { EntityAdapter } from './base.js'
+import { PrefixedActionIds, FeedbackId } from '../util.js'
 
-export const LockAdapter: EntityAdapter<Lock> = {
-	is: (instance: unknown): instance is Lock => {
-		return instance instanceof Lock
+export const LockAdapter: EntityAdapter<LockEntity> = {
+	is: (instance: unknown): instance is LockEntity => {
+		return typeof instance === 'object' && instance !== null && (instance as any).type === 'lock'
 	},
 
-	createActions: (client: EsphomeClient): CompanionActionDefinitions => {
+	createActions: (client: EsphomeWrapper): CompanionActionDefinitions => {
 		const actions: CompanionActionDefinitions = {}
-		client.getAll(LockAdapter).forEach((lock) => {
-			const options = [
-				{ id: LockCommand.LOCK_LOCK, label: 'Lock' },
-				{ id: LockCommand.LOCK_UNLOCK, label: 'Unlock' },
-			]
-			if (lock.supportsOpen) {
-				options.push({ id: LockCommand.LOCK_OPEN, label: 'Open' })
-			}
-			actions[PrefixedActionIds.LockCommand + lock.id] = {
-				name: `${lock.name}: Set lock state`,
-				options: [
-					{
-						type: 'dropdown',
-						label: 'State',
-						id: 'state',
-						default: LockCommand.LOCK_LOCK,
-						choices: options,
+		const lockEntities = client.getAvailableEntityIds()['lock'] || []
+		if (lockEntities.length) {
+			lockEntities.forEach((entityId: string) => {
+				const options = [
+					{ id: 1, label: 'Lock' },
+					{ id: 2, label: 'Unlock' },
+				]
+				if ((client as any).getEntity(entityId)?.supportsOpen) {
+					options.push({ id: 3, label: 'Open' })
+				}
+				actions[PrefixedActionIds.LockCommand + entityId] = {
+					name: `${entityId}: Set lock state`,
+					options: [
+						{
+							type: 'dropdown',
+							label: 'State',
+							id: 'state',
+							default: 1,
+							choices: options,
+						},
+					],
+					callback: (evt): void => {
+						client.command(evt.options.entity_id as string, { command: evt.options.state })
 					},
-				],
-				callback: (evt): void => {
-					lock.setLockCommand(evt.options.value as LockCommand)
-				},
-			}
-		})
+				}
+			})
+		}
 		return actions
 	},
 
-	createFeedbacks: (client: EsphomeClient): CompanionFeedbackDefinitions => {
+	createFeedbacks: (client: EsphomeWrapper): CompanionFeedbackDefinitions => {
 		const feedbacks: CompanionFeedbackDefinitions = {}
-		const entities = client.getAll(LockAdapter)
-		if (entities.length) {
-			feedbacks[FeedbackId.LockState] = {
-				type: 'boolean',
-				name: 'Change from lock state',
-				description: 'If the lock state matches the rule, change style of the bank',
-				options: [
-					EntityPicker(entities),
-					{
-						type: 'dropdown',
-						label: 'State',
-						id: 'state',
-						default: LockState.LOCKED,
-						choices: [
-							{ id: LockState.LOCKED, label: 'Locked' },
-							{ id: LockState.UNLOCKED, label: 'Unocked' },
-							{ id: LockState.LOCKING, label: 'Locking' },
-							{ id: LockState.UNLOCKING, label: 'Unlocking' },
-							{ id: LockState.JAMMED, label: 'Jammed' },
-							{ id: LockState.NONE, label: 'None' },
-						],
+		const locks = client.getAvailableEntityIds()['lock'] || []
+		if (locks.length) {
+			locks.forEach((entityId: string) => {
+				feedbacks[FeedbackId.LockState + entityId] = {
+					type: 'boolean',
+					name: `${entityId}: Change from lock state`,
+					description: 'If the lock state matches the rule, change style of the bank',
+					options: [
+						{
+							type: 'dropdown',
+							label: 'Entity',
+							id: 'entity_id',
+							default: entityId,
+							choices: [{ id: entityId, label: entityId }],
+						},
+						{
+							type: 'dropdown',
+							label: 'State',
+							id: 'state',
+							default: 1,
+							choices: [
+								{ id: 1, label: 'Locked' },
+								{ id: 2, label: 'Unlocked' },
+								{ id: 3, label: 'Locking' },
+								{ id: 4, label: 'Unlocking' },
+								{ id: 5, label: 'Jammed' },
+								{ id: 6, label: 'None' },
+							],
+						},
+					],
+					defaultStyle: {
+						color: combineRgb(0, 0, 0),
+						bgcolor: combineRgb(0, 255, 0),
 					},
-				],
-				defaultStyle: {
-					color: combineRgb(0, 0, 0),
-					bgcolor: combineRgb(0, 255, 0),
-				},
-				callback: (feedback): boolean => {
-					const entity = client.getEntity(String(feedback.options.entity_id), LockAdapter)
-					if (entity) {
-						return entity.isState(feedback.options.state as LockState)
-					}
-					return false
-				},
-			}
+					callback: (feedback): boolean => {
+						const event = client.latest(feedback.options.entity_id as string)
+						if (!event || !event.data) return false
+						return event.data.state === feedback.options.state
+					},
+				}
+			})
 		}
 		return feedbacks
 	},

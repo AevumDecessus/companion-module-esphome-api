@@ -1,81 +1,63 @@
-import { CompanionActionDefinitions, CompanionFeedbackDefinitions, CompanionInputFieldDropdown, combineRgb } from '@companion-module/base'
-import { EsphomeClient } from '../esphomeClient'
-import { EntityAdapter } from './base'
-import { FeedbackId, PrefixedActionIds } from '../util'
-import Climate from '../entities/ClimateEntity'
-import { EntityPicker } from '../choices'
-import { ClimateMode } from '../proto/api'
+import { CompanionActionDefinitions, CompanionFeedbackDefinitions } from '@companion-module/base'
+import { ClimateEntity } from 'esphome-client'
+import { EsphomeWrapper } from '../esphomeWrapper.js'
+import { EntityAdapter } from './base.js'
+import { FeedbackId, PrefixedActionIds } from '../util.js'
+import { ClimateModePicker, AllClimateModes } from '../choices.js'
 
-export const ClimateAdapter: EntityAdapter<Climate> = {
-	is: (instance: unknown): instance is Climate => {
-		return instance instanceof Climate
+export const ClimateAdapter: EntityAdapter<ClimateEntity> = {
+	is: (instance: unknown): instance is ClimateEntity => {
+		return typeof instance === 'object' && instance !== null && (instance as any).type === 'climate'
 	},
 
-	createActions: (client: EsphomeClient): CompanionActionDefinitions => {
+	createActions: (client: EsphomeWrapper): CompanionActionDefinitions => {
 		const actions: CompanionActionDefinitions = {}
-		client.getAll(ClimateAdapter).forEach((climate) => {
-			actions[PrefixedActionIds.ClimateMode + climate.id] = {
-				name: `${climate.name}: Set climate mode`,
-				options: [ClimateModePicker(climate.supportedModes)],
-				callback: (evt): void => {
-					if (typeof evt.options.mode === 'number') {
-						climate.setMode(evt.options.mode)
-					}
-				},
-			}
-		})
+		const climateEntities = client.getAvailableEntityIds()['climate'] || []
+		if (climateEntities.length) {
+			climateEntities.forEach((entityId: string) => {
+				actions[PrefixedActionIds.ClimateMode + entityId] = {
+					name: `${entityId}: Set climate mode`,
+					options: [ClimateModePicker(AllClimateModes)],
+					callback: (evt): void => {
+						client.command(evt.options.entity_id as string, { mode: evt.options.mode })
+					},
+				}
+			})
+		}
 		return actions
 	},
 
-	createFeedbacks: (client: EsphomeClient): CompanionFeedbackDefinitions => {
+	createFeedbacks: (client: EsphomeWrapper): CompanionFeedbackDefinitions => {
 		const feedbacks: CompanionFeedbackDefinitions = {}
-		const entities = client.getAll(ClimateAdapter)
-		if (entities.length) {
-			feedbacks[FeedbackId.ClimateMode] = {
-				type: 'boolean',
-				name: 'Change from climate mode',
-				description: 'If the climate mode matches the rule, change style of the bank',
-				options: [EntityPicker(entities), ClimateModePicker(AllClimateModes)],
-				defaultStyle: {
-					color: combineRgb(0, 0, 0),
-					bgcolor: combineRgb(0, 255, 0),
-				},
-				callback: (feedback): boolean => {
-					const entity = client.getEntity(String(feedback.options.entity_id), ClimateAdapter)
-					if (entity) {
-						return entity.mode === feedback.options.mode
-					}
-					return false
-				},
-			}
+		const climates = client.getAvailableEntityIds()['climate'] || []
+		if (climates.length) {
+			climates.forEach((entityId: string) => {
+				feedbacks[FeedbackId.ClimateMode + entityId] = {
+					type: 'boolean',
+					name: `${entityId}: Change from climate mode`,
+					description: 'If the climate mode matches the rule, change style of the bank',
+					options: [
+						{
+							type: 'dropdown',
+							label: 'Entity',
+							id: 'entity_id',
+							default: entityId,
+							choices: [{ id: entityId, label: entityId }],
+						},
+						ClimateModePicker(AllClimateModes),
+					],
+					defaultStyle: {
+						color: 0,
+						bgcolor: 16777215,
+					},
+					callback: (feedback): boolean => {
+						const event = client.latest(feedback.options.entity_id as string)
+						if (!event || !event.data) return false
+						return event.data.mode === feedback.options.mode
+					},
+				}
+			})
 		}
 		return feedbacks
 	},
-}
-
-const ClimateModeLabels: { [key in ClimateMode]: string } = {
-	[ClimateMode.OFF]: 'Off',
-	[ClimateMode.HEAT_COOL]: 'Heat/Cool',
-	[ClimateMode.COOL]: 'Cool',
-	[ClimateMode.HEAT]: 'Heat',
-	[ClimateMode.FAN_ONLY]: 'Fan Only',
-	[ClimateMode.DRY]: 'Dry',
-	[ClimateMode.AUTO]: 'Auto',
-} as const
-
-const AllClimateModes: ClimateMode[] = Object.values(ClimateMode).filter((v): v is ClimateMode => typeof v !== 'string')
-
-function ClimateModePicker(supportedModes: ClimateMode[]): CompanionInputFieldDropdown {
-	return {
-		type: 'dropdown',
-		label: 'Mode',
-		id: 'mode',
-		default: supportedModes[0],
-		choices: supportedModes.map((mode) => {
-			return {
-				id: mode,
-				label: ClimateModeLabels[mode],
-			}
-		}),
-	}
 }

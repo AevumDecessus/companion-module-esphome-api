@@ -1,5 +1,45 @@
-import { CompanionInputFieldCheckbox, CompanionInputFieldDropdown, CompanionInputFieldNumber, InputValue } from '@companion-module/base'
-import { OnOffToggle } from './util'
+import {
+	CompanionInputFieldCheckbox,
+	CompanionInputFieldDropdown,
+	CompanionInputFieldNumber,
+	JsonValue,
+} from '@companion-module/base'
+import { OnOffToggle } from './util.js'
+
+export enum ClimateMode {
+	Off = 0,
+	HeatCool = 1,
+	Cool = 2,
+	Heat = 3,
+	FanOnly = 4,
+	Dry = 5,
+	Auto = 6,
+}
+
+export const AllClimateModes: number[] = [0, 1, 2, 3, 4, 5, 6]
+
+const ClimateModeLabels: Record<number, string> = {
+	0: 'Off',
+	1: 'Heat/Cool',
+	2: 'Cool',
+	3: 'Heat',
+	4: 'Fan Only',
+	5: 'Dry',
+	6: 'Auto',
+}
+
+export function ClimateModePicker(supportedModes: number[]): CompanionInputFieldDropdown {
+	return {
+		type: 'dropdown',
+		label: 'Mode',
+		id: 'mode',
+		default: supportedModes[0],
+		choices: supportedModes.map((mode) => ({
+			id: mode,
+			label: ClimateModeLabels[mode] || String(mode),
+		})),
+	}
+}
 
 export function OnOffTogglePicker(): CompanionInputFieldDropdown {
 	const options = [
@@ -44,7 +84,7 @@ export function EntityPicker(entities: { id: string; name: string }[]): Companio
 	}
 }
 
-export function NumberValuePicker() : CompanionInputFieldNumber {
+export function NumberValuePicker(): CompanionInputFieldNumber {
 	return {
 		type: 'number',
 		label: 'Value',
@@ -78,9 +118,9 @@ export function NumberComparitorPicker(): CompanionInputFieldDropdown {
 	}
 }
 export function compareNumber(
-	target: InputValue | undefined,
-	comparitor: InputValue | undefined,
-	currentValue: number
+	target: JsonValue | undefined,
+	comparitor: JsonValue | undefined,
+	currentValue: number,
 ): boolean {
 	const targetValue = Number(target)
 	if (isNaN(targetValue)) {
